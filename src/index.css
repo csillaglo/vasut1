@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for Leaflet map */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.custom-building-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.railway-line {
+  cursor: pointer;
+}
+
+.railway-line:hover {
+  opacity: 1 !important;
+  filter: brightness(1.1);
+}
+
+.railway-line.cursor-crosshair {
+  cursor: crosshair !important;
+}
+
+.railway-line.cursor-crosshair:hover {
+  filter: brightness(1.2) !important;
+  transform: scale(1.02);
+}
+
+.railway-line.cursor-pointer {
+  cursor: pointer !important;
+}
+
+.railway-line.cursor-pointer:hover {
+  filter: brightness(1.1) !important;
+}
+
+/* Smooth animations for UI elements */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
