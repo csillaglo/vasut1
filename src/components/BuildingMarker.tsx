@@ -10,7 +10,7 @@ interface BuildingMarkerProps {
   isConnectionStart: boolean;
 }
 
-const getBuildingIcon = (type: Building['type'], isConnectionStart: boolean) => {
+const getBuildingIcon = (type: Building['type'], isConnectionStart: boolean, isInPlannedRoute: boolean) => {
   const iconMap = {
     station: '🏢',
     factory: '🏭',
@@ -18,14 +18,28 @@ const getBuildingIcon = (type: Building['type'], isConnectionStart: boolean) => 
     city: '🏙️',
   };
 
-  const color = isConnectionStart ? 'bg-green-500' : 'bg-white';
-  const borderColor = isConnectionStart ? 'border-green-400' : 'border-gray-300';
-  const textColor = isConnectionStart ? 'text-white' : 'text-gray-700';
-  const shadow = isConnectionStart ? 'shadow-green-300' : 'shadow-gray-400';
+  let color = 'bg-white';
+  let borderColor = 'border-gray-300';
+  let textColor = 'text-gray-700';
+  let shadow = 'shadow-gray-400';
+  let animation = '';
+
+  if (isConnectionStart) {
+    color = 'bg-green-500';
+    borderColor = 'border-green-400';
+    textColor = 'text-white';
+    shadow = 'shadow-green-300';
+  } else if (isInPlannedRoute) {
+    color = 'bg-blue-500';
+    borderColor = 'border-blue-400';
+    textColor = 'text-white';
+    shadow = 'shadow-blue-300';
+    animation = 'animate-pulse';
+  }
 
   return L.divIcon({
     html: `
-      <div class="w-10 h-10 ${color} ${borderColor} border-3 rounded-full flex items-center justify-center ${textColor} shadow-lg ${shadow} transform transition-all hover:scale-110 cursor-pointer">
+      <div class="w-10 h-10 ${color} ${borderColor} border-3 rounded-full flex items-center justify-center ${textColor} shadow-lg ${shadow} transform transition-all hover:scale-110 cursor-pointer ${animation}">
         <span class="text-lg">${iconMap[type]}</span>
       </div>
     `,
@@ -45,13 +59,23 @@ export function BuildingMarker({ building, isConnectionStart }: BuildingMarkerPr
     currentRailwayPath,
     startRailwayDrawing,
     finishRailwayDrawing,
+    isPlanningRoute,
+    plannedRoute,
+    addStopToPlannedRoute,
   } = useGameStore();
 
+  const isInPlannedRoute = plannedRoute.includes(building.id);
+
   const icon = React.useMemo(() => {
-    return getBuildingIcon(building.type, isConnectionStart);
-  }, [building.type, isConnectionStart]);
+    return getBuildingIcon(building.type, isConnectionStart, isInPlannedRoute);
+  }, [building.type, isConnectionStart, isInPlannedRoute]);
 
   const handleMarkerClick = () => {
+    if (isPlanningRoute) {
+      addStopToPlannedRoute(building.id);
+      return;
+    }
+
     if (isDrawingRailway && (railwayStartBuilding || railwayStartJunction) && selectedTool === 'railway') {
       if (railwayStartBuilding === building.id) {
         return;

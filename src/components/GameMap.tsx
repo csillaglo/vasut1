@@ -11,6 +11,7 @@ import { useKeyboardControls } from '../hooks/useKeyboardControls';
 import { smoothPath } from '../utils/pathSmoothing';
 import { MapStyleSelector } from './MapStyleSelector';
 import { useTrainMovement } from '../hooks/useTrainMovement';
+import { PlannedRouteVisualizer } from './PlannedRouteVisualizer';
 import 'leaflet/dist/leaflet.css';
 import { Building } from '../types/game';
 
@@ -217,6 +218,7 @@ export function GameMap() {
         />
         
         <MapEvents onMapClick={handleMapClick} onMouseMove={handleMouseMove} />
+        <PlannedRouteVisualizer />
         
         {buildings.map((building) => (
           <BuildingMarker

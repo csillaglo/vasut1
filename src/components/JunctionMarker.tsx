@@ -10,15 +10,26 @@ interface JunctionMarkerProps {
   isConnectionStart: boolean;
 }
 
-const getJunctionIcon = (isConnectionStart: boolean) => {
-  const color = isConnectionStart ? 'bg-green-500' : 'bg-orange-500';
-  const borderColor = isConnectionStart ? 'border-green-400' : 'border-orange-400';
-  const textColor = 'text-white';
-  const shadow = isConnectionStart ? 'shadow-green-300' : 'shadow-orange-300';
+const getJunctionIcon = (isConnectionStart: boolean, isInPlannedRoute: boolean) => {
+  let color = 'bg-orange-500';
+  let borderColor = 'border-orange-400';
+  let shadow = 'shadow-orange-300';
+  let animation = '';
+
+  if (isConnectionStart) {
+    color = 'bg-green-500';
+    borderColor = 'border-green-400';
+    shadow = 'shadow-green-300';
+  } else if (isInPlannedRoute) {
+    color = 'bg-blue-500';
+    borderColor = 'border-blue-400';
+    shadow = 'shadow-blue-300';
+    animation = 'animate-pulse';
+  }
 
   return L.divIcon({
     html: `
-      <div class="w-7 h-7 ${color} ${borderColor} border-2 rounded-full flex items-center justify-center ${textColor} shadow-md ${shadow} transform transition-all hover:scale-110 cursor-pointer">
+      <div class="w-7 h-7 ${color} ${borderColor} border-2 rounded-full flex items-center justify-center text-white shadow-md ${shadow} transform transition-all hover:scale-110 cursor-pointer ${animation}">
         <span class="text-sm">🔀</span>
       </div>
     `,
@@ -38,9 +49,23 @@ export function JunctionMarker({ junction, isConnectionStart }: JunctionMarkerPr
     currentRailwayPath,
     startRailwayFromJunction,
     finishRailwayDrawing,
+    isPlanningRoute,
+    plannedRoute,
+    addStopToPlannedRoute,
   } = useGameStore();
 
+  const isInPlannedRoute = plannedRoute.includes(junction.id);
+
+  const icon = React.useMemo(() => {
+    return getJunctionIcon(isConnectionStart, isInPlannedRoute);
+  }, [isConnectionStart, isInPlannedRoute]);
+
   const handleMarkerClick = () => {
+    if (isPlanningRoute) {
+      addStopToPlannedRoute(junction.id);
+      return;
+    }
+
     if (isDrawingRailway && (railwayStartBuilding || railwayStartJunction) && selectedTool === 'railway') {
       if (railwayStartJunction === junction.id) {
         return;
@@ -56,7 +81,7 @@ export function JunctionMarker({ junction, isConnectionStart }: JunctionMarkerPr
   return (
     <Marker
       position={junction.position}
-      icon={getJunctionIcon(isConnectionStart)}
+      icon={icon}
       eventHandlers={{
         click: handleMarkerClick,
       }}

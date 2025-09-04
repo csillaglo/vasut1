@@ -5,6 +5,7 @@ import { createPlayerSlice } from '../store/slices/playerSlice';
 import { createDrawingSlice } from '../store/slices/drawingSlice';
 import { createTrainSlice } from '../store/slices/trainSlice';
 import { createPersistenceSlice } from '../store/slices/persistenceSlice';
+import { createRoutePlanningSlice } from '../store/slices/routePlanningSlice';
 
 export const useGameStore = create<GameStore>()((...a) => ({
   ...createEntitySlice(...a),
@@ -12,4 +13,5 @@ export const useGameStore = create<GameStore>()((...a) => ({
   ...createDrawingSlice(...a),
   ...createTrainSlice(...a),
   ...createPersistenceSlice(...a),
+  ...createRoutePlanningSlice(...a),
 }));

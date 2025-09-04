@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { Building, Railway, Junction, Train } from './game';
 
 // The full store interface, combining all slices
-export interface GameStore extends EntitySlice, PlayerSlice, DrawingSlice, TrainSlice, PersistenceSlice {}
+export interface GameStore extends EntitySlice, PlayerSlice, DrawingSlice, TrainSlice, PersistenceSlice, RoutePlanningSlice {}
 
 // Generic for creating slices
 export type StoreSlice<T> = StateCreator<
@@ -93,3 +93,18 @@ export interface PersistenceSliceActions {
   importData: (jsonData: string) => boolean;
 }
 export type PersistenceSlice = PersistenceSliceActions;
+
+// Slice for interactive route planning
+export interface RoutePlanningSliceState {
+  isPlanningRoute: boolean;
+  planningTrainId: string | null;
+  plannedRoute: string[];
+}
+export interface RoutePlanningSliceActions {
+  startRoutePlanning: (trainId: string) => void;
+  cancelRoutePlanning: () => void;
+  addStopToPlannedRoute: (stopId: string) => void;
+  clearPlannedRoute: () => void;
+  removeLastStopFromPlannedRoute: () => void;
+}
+export type RoutePlanningSlice = RoutePlanningSliceState & RoutePlanningSliceActions;

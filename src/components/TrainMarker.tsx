@@ -40,45 +40,48 @@ const getTrainIcon = (type: Train['type'], status: Train['status'], direction: T
 };
 
 export function TrainMarker({ train }: TrainMarkerProps) {
-  const { removeTrain, startTrain, pauseTrain, resumeTrain, abortTrain, buildings, junctions, railways } = useGameStore();
-  const [showRouteBuilder, setShowRouteBuilder] = React.useState(false);
-  const [selectedRoute, setSelectedRoute] = React.useState<string[]>([]);
+  const {
+    removeTrain,
+    startTrain,
+    pauseTrain,
+    resumeTrain,
+    abortTrain,
+    buildings,
+    junctions,
+    railways,
+    startRoutePlanning
+  } = useGameStore();
   const map = useMap();
-
-  const allStops = [...buildings, ...junctions];
 
   const icon = React.useMemo(() => {
     return getTrainIcon(train.type, train.status, train.direction);
   }, [train.type, train.status, train.direction]);
 
-  const handleStartTrain = (customRoute?: string[]) => {
-    let route = customRoute || selectedRoute;
-    
-    if (route.length === 0) {
-      const stations = buildings.filter(b => b.type === 'station');
-      if (stations.length >= 2) {
-        route = [stations[0].id, stations[1].id];
-      }
+  const handleQuickStart = () => {
+    const stations = buildings.filter(b => b.type === 'station');
+    if (stations.length < 2) {
+      alert('Legalább 2 állomás szükséges a gyors indításhoz!');
+      return;
     }
     
-    if (route.length >= 2) {
-      if (validateRoute(route, railways, buildings, junctions)) {
-        try {
-          startTrain(train.id, route);
-          map.closePopup();
-        } catch (error) {
-          console.error('Error starting train:', error);
-          alert('Hiba történt a vonat indításakor!');
-          return;
-        }
-        setShowRouteBuilder(false);
-        setSelectedRoute([]);
-      } else {
-        alert('Az útvonal nem érvényes! Ellenőrizze, hogy minden szakasz össze van-e kötve vasútvonallal.');
+    const route = [stations[0].id, stations[1].id];
+
+    if (validateRoute(route, railways, buildings, junctions)) {
+      try {
+        startTrain(train.id, route);
+        map.closePopup();
+      } catch (error) {
+        console.error('Error starting train:', error);
+        alert('Hiba történt a vonat indításakor!');
       }
     } else {
-      alert('Legalább 2 megálló szükséges az útvonalhoz!');
+      alert('Az útvonal nem érvényes! Ellenőrizze, hogy az első két állomás össze van-e kötve vasútvonallal.');
     }
+  };
+
+  const handlePlanRoute = () => {
+    startRoutePlanning(train.id);
+    map.closePopup();
   };
 
   const handlePause = () => {
@@ -96,16 +99,6 @@ export function TrainMarker({ train }: TrainMarkerProps) {
     map.closePopup();
   };
 
-  const addToRoute = (stopId: string) => {
-    if (!selectedRoute.includes(stopId)) {
-      setSelectedRoute([...selectedRoute, stopId]);
-    }
-  };
-
-  const removeFromRoute = (index: number) => {
-    setSelectedRoute(selectedRoute.filter((_, i) => i !== index));
-  };
-
   const getStopName = (stopId: string) => {
     const building = buildings.find(b => b.id === stopId);
     const junction = junctions.find(j => j.id === stopId);
@@ -118,9 +111,6 @@ export function TrainMarker({ train }: TrainMarkerProps) {
       icon={icon}
       eventHandlers={{
         popupopen: (e) => {
-          // Reset state when popup opens
-          setShowRouteBuilder(false);
-          setSelectedRoute([]);
           const popupContent = e.popup.getElement();
           if (popupContent) {
             // Prevent clicks inside the popup from closing it
@@ -195,17 +185,17 @@ export function TrainMarker({ train }: TrainMarkerProps) {
           )}
           
           {/* Main Controls View */}
-          <div className={`flex gap-1 flex-wrap ${showRouteBuilder ? 'hidden' : ''}`}>
+          <div className="flex gap-1 flex-wrap">
             {train.status === 'idle' && (
               <>
                 <button
-                  onClick={() => handleStartTrain()}
+                  onClick={handleQuickStart}
                   className="px-2 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium flex items-center gap-1"
                 >
                   ▶️ Gyors start
                 </button>
                 <button
-                  onClick={() => setShowRouteBuilder(true)}
+                  onClick={handlePlanRoute}
                   className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium flex items-center gap-1"
                 >
                   🗺️ Tervezés
@@ -245,65 +235,6 @@ export function TrainMarker({ train }: TrainMarkerProps) {
             >
               🗑️ Eladás
             </button>
-          </div>
-
-          {/* Route Builder View */}
-          <div className={`space-y-2 ${!showRouteBuilder ? 'hidden' : ''}`}>
-            <h4 className="font-semibold text-xs text-gray-800 border-b pb-1">🗺️ Útvonal tervezése</h4>
-            {selectedRoute.length > 0 && (
-              <div className="bg-gray-50 p-1 rounded text-xs">
-                {selectedRoute.map((stopId, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="truncate">{index + 1}. {getStopName(stopId)}</span>
-                    <button
-                      onClick={() => removeFromRoute(index)}
-                      className="text-red-500 hover:text-red-700 ml-1 text-base"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="max-h-24 overflow-y-auto">
-              <p className="text-gray-600 mb-1">Elérhető megállók:</p>
-              {allStops.map(stop => (
-                <button
-                  key={stop.id}
-                  onClick={() => addToRoute(stop.id)}
-                  className={`block w-full text-left px-1.5 py-0.5 rounded mb-0.5 transition-colors ${
-                    selectedRoute.includes(stop.id)
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  {'type' in stop ? 
-                    `${{station: '🚂', factory: '🏭', warehouse: '📦', city: '🏙️'}[stop.type]} ${stop.name}` :
-                    `🔀 ${stop.name}`
-                  }
-                </button>
-              ))}
-            </div>
-            
-            <div className="flex gap-1">
-              <button
-                onClick={() => handleStartTrain(selectedRoute)}
-                disabled={selectedRoute.length < 2}
-                className="px-2 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-300"
-              >
-                ▶️ Indítás
-              </button>
-              <button
-                onClick={() => {
-                  setShowRouteBuilder(false);
-                  setSelectedRoute([]);
-                }}
-                className="px-2 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-              >
-                Mégse
-              </button>
-            </div>
           </div>
         </div>
       </Popup>
